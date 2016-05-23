@@ -1,21 +1,37 @@
 import { omit } from 'lodash/object';
 
+
 const initialState = { samples_list: {},
                        filter_text: '',
                        selected: {},
+                       sampleOrder: {},
                        clicked_task: Object(),
                        manualMount: { set: false, id: 0 },
                        login_data: {} };
 
+
+function initialSampleOrder(sampleList) {
+  let sampleOrder = new Map();
+  
+  for (const key in sampleList) {
+    sampleOrder.set(key, sampleOrder.size);
+  }
+
+  return sampleOrder;
+}
+
 export default (state = initialState, action) => {
   switch (action.type) {
-    case 'UPDATE_SAMPLES':
-          // should have session samples
-      return Object.assign({}, state, { samples_list: action.samples_list });
+    case 'UPDATE_SAMPLES': {
+      return Object.assign({}, state, { samples_list: action.samples_list,
+                                        sampleOrder: initialSampleOrder(action.samples_list) });
+    }
     case 'ADD_SAMPLE_TO_GRID':
-
       return { ...state, samples_list: { ...state.samples_list, [action.id]: action.data },
                manualMount: { ...state.manualMount, id: state.manualMount.id + 1 } };
+    case 'REORDER_SAMPLE': {
+      return Object.assign({}, state, {sampleOrder: action.sampleOrder});
+    }
     case 'TOGGLE_SELECTED':
       {
         const newSelected = Object.assign({}, state.selected);
@@ -158,4 +174,3 @@ export default (state = initialState, action) => {
       return state;
   }
 };
-
