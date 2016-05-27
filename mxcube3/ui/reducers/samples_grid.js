@@ -22,10 +22,11 @@ function initialSampleOrder(sampleList) {
 
 export default (state = initialState, action) => {
   switch (action.type) {
-    case 'UPDATE_SAMPLES': {
-      return Object.assign({}, state, { samples_list: action.samples_list,
-                                        sampleOrder: initialSampleOrder(action.samples_list) });
-    }
+    case "SIGNOUT":
+      return Object.assign({}, initialState);
+    case 'UPDATE_SAMPLES':
+          // should have session samples
+      return Object.assign({}, state, { samples_list: action.samples_list });
     case 'ADD_SAMPLE_TO_GRID':
       return { ...state, samples_list: { ...state.samples_list, [action.id]: action.data },
                manualMount: { ...state.manualMount, id: state.manualMount.id + 1 } };

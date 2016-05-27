@@ -1,7 +1,7 @@
 import { omit } from 'lodash/object';
 const initialState = {
   clickCentring: false,
-  clickCentringPoints: 0,
+  clickCentringPoints: [],
   zoom: 0,
   points: {},
   width: 0,
@@ -12,14 +12,26 @@ const initialState = {
     PhiStep: 90,
     PhiYStep: 0.1,
     PhiZStep: 0.1,
-    SampxStep: 0.1,
-    SampyStep: 0.1,
+    SampXStep: 0.1,
+    SampYStep: 0.1,
+    KappaStep: 0.1,
+    Kappa_phiStep: 0.1
   },
-  motors: {},
+  motors: {
+    Focus: { position: 0, Status: 3 },
+    Phi: { position: 0, Status: 3 },
+    PhiY: { position: 0, Status: 3 },
+    PhiZ: { position: 0, Status: 3 },
+    Sampx: { position: 0, Status: 3 },
+    Sampy: { position: 0, Status: 3 },
+    BackLight: { position: 0, Status: 3 },
+    FrontLight: { position: 0, Status: 3 },
+    Kappa: { position: 0, Status: 3 },
+    Kappa_phi: { position: 0, Status: 3 }
+  },
   pixelsPerMm: 0,
   imageRatio: 0,
-  canvas: null,
-  contextMenu: { show:false, shape: { type: 'NONE' }, x: 0, y:0 },
+  contextMenu: { show: false, shape: { type: 'NONE' }, x: 0, y: 0 },
   apertureList: [],
   currentAperture: 0,
   currentPhase: ''
@@ -33,19 +45,27 @@ export default (state = initialState, action) => {
       }
     case 'START_CLICK_CENTRING':
       {
-        return { ...state, clickCentring: true, clickCentringPoints: 0 };
+        return { ...state, clickCentring: true, clickCentringPoints: [] };
       }
     case 'STOP_CLICK_CENTRING':
       {
-        return { ...state, clickCentring: false };
+        return { ...state, clickCentring: false, clickCentringPoints: [] };
       }
     case 'ADD_CENTRING_POINT':
       {
-        return (state.clickCentringPoints === 2 ? { ...state, clickCentring: false, clickCentringPoints:0 } : { ...state, clickCentringPoints: (state.clickCentringPoints + 1) });
+        return (
+          state.clickCentringPoints.length === 2 ?
+            { ...state, clickCentring: false, clickCentringPoints: [] } :
+            {
+              ...state,
+              clickCentringPoints: [...state.clickCentringPoints,
+              { x: action.x, y: action.y }]
+            }
+        );
       }
     case 'SAVE_POINT':
       {
-        return { ...state, points: { ...state.points, [action.point.posId] : action.point } };
+        return { ...state, points: { ...state.points, [action.point.posId]: action.point } };
       }
     case 'DELETE_POINT':
       {
@@ -53,15 +73,31 @@ export default (state = initialState, action) => {
       }
     case 'SAVE_IMAGE_SIZE':
       {
-        return { ...state, width: action.width, height: action.height, pixelsPerMm: action.pixelsPerMm };
+        return {
+          ...state,
+          width: action.width,
+          height: action.height,
+          pixelsPerMm: action.pixelsPerMm
+        };
       }
     case 'SAVE_MOTOR_POSITIONS':
       {
-        return { ...state, motors: action.data, lightOn: { back: action.data.BackLightSwitch.Status, front: action.data.FrontLightSwitch.Status }, zoom: action.data.Zoom.position };
+        return {
+          ...state,
+          motors: { ...state.motors, ...action.data },
+          lightOn: { back: action.data.BackLightSwitch.Status,
+          front: action.data.FrontLightSwitch.Status },
+          zoom: action.data.Zoom.position
+        };
       }
     case 'SAVE_MOTOR_POSITION':
       {
-        return { ...state, motors: { ...state.motors, [action.name] : { position: action.value } } };
+        return {
+          ...state,
+          motors: { ...state.motors,
+            [action.name]: { position: action.value }
+          }
+        };
       }
     case 'SET_LIGHT':
       {
@@ -73,15 +109,18 @@ export default (state = initialState, action) => {
       }
     case 'SHOW_CONTEXT_MENU':
       {
-        return { ...state, contextMenu: { show: action.show, shape: action.shape, x: action.x, y: action.y } };
+        return {
+          ...state,
+          contextMenu: {
+            show: action.show,
+            shape: action.shape,
+            x: action.x, y: action.y
+          }
+        };
       }
     case 'SET_IMAGE_RATIO':
       {
-        return { ...state, imageRatio: action.ratio };
-      }
-    case 'SET_CANVAS':
-      {
-        return { ...state, canvas: action.canvas };
+        return { ...state, imageRatio: state.width / action.clientWidth };
       }
     case 'SET_APERTURE':
       {
@@ -105,17 +144,20 @@ export default (state = initialState, action) => {
       }
     case 'SET_INITIAL_STATUS':
       {
-        return { ...state,
-                    motors: action.data.Motors,
-                    lightOn: { back: action.data.Motors.BackLightSwitch.Status, front: action.data.Motors.FrontLightSwitch.Status },
-                    zoom: action.data.Motors.Zoom.position,
-                    width: action.data.Camera.imageWidth,
-                    height: action.data.Camera.imageHeight,
-                    pixelsPerMm: action.data.Camera.pixelsPerMm[0],
-                    apertureList : action.data.beamInfo.apertureList,
-                    currentAperture : action.data.beamInfo.currentAperture
-
-                };
+        return {
+          ...state,
+          motors: { ...state.motors, ...action.data.Motors },
+          lightOn: {
+            back: action.data.Motors.BackLightSwitch.Status,
+            front: action.data.Motors.FrontLightSwitch.Status
+          },
+          zoom: action.data.Motors.Zoom.position,
+          width: action.data.Camera.imageWidth,
+          height: action.data.Camera.imageHeight,
+          pixelsPerMm: action.data.Camera.pixelsPerMm[0],
+          apertureList: action.data.beamInfo.apertureList,
+          currentAperture: action.data.beamInfo.currentAperture
+        };
       }
 
     default:
