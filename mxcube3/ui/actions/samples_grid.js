@@ -3,9 +3,11 @@ import { sendClearQueue, sendRunSample, sendAddSample, sendMountSample } from '.
 import { showTaskForm } from './taskForm';
 import { setLoading, showErrorPanel } from './general';
 
+
 export function doUpdateSamples(samples_list) {
   return { type: 'UPDATE_SAMPLES', samples_list };
 }
+
 
 export function doGetSamplesList() {
   return function (dispatch) {
@@ -22,6 +24,7 @@ export function doGetSamplesList() {
   };
 }
 
+
 export function doAddSample(id, parameters) {
   return function (dispatch) {
     dispatch(sendAddSample(id)).then(
@@ -33,6 +36,7 @@ export function doAddSample(id, parameters) {
   };
 }
 
+
 export function doAddSampleGrid(id, parameters) {
   return {
     type: 'ADD_SAMPLE_TO_GRID',
@@ -42,18 +46,20 @@ export function doAddSampleGrid(id, parameters) {
 }
 
 
-
 export function doSetLoadable(loadable) {
   return { type: 'SET_LOADABLE', loadable };
 }
+
 
 export function doAddTag(tag) {
   return { type: 'ADD_TAG', tag };
 }
 
+
 export function doToggleSelected(index) {
   return { type: 'TOGGLE_SELECTED', index };
 }
+
 
 export function doSelectAll() {
   let selected = true;
@@ -65,13 +71,16 @@ export function doUnselectAll() {
   return { type: 'UNSELECT_ALL', selected };
 }
 
+
 export function doFilter(filter_text) {
   return { type: 'FILTER', filter_text };
 }
 
+
 export function doSetSamplesInfo(sample_info_list) {
   return { type: 'SET_SAMPLES_INFO', sample_info_list };
 }
+
 
 export function doSyncSamples(proposal_id) {
   return function (dispatch) {
@@ -93,6 +102,7 @@ export function doAddTask(sample_queue_id, sample_id, task, parameters) {
            };
 }
 
+
 export function doAddTaskResult(sample_id, task_queue_id, state) {
   return { type: 'ADD_METHOD_RESULTS',
             index: sample_id,
@@ -100,6 +110,7 @@ export function doAddTaskResult(sample_id, task_queue_id, state) {
             state: state
             };
 }
+
 
 export function sendManualMount(manual) {
   return function (dispatch) {
@@ -125,6 +136,7 @@ export function sendManualMount(manual) {
   };
 }
 
+
 export function doSetManualMount(manual) {
   return { type: 'SET_MANUAL_MOUNT', manual };
 }
@@ -138,6 +150,7 @@ export function doChangeTask(queue_id, sample_id, parameters) {
     };
 }
 
+
 export function doRemoveTask(sample_queue_id, queue_id, sample_id) {
   return { type: 'REMOVE_METHOD',
             index: sample_id,
@@ -145,6 +158,7 @@ export function doRemoveTask(sample_queue_id, queue_id, sample_id) {
             queue_id: queue_id
             };
 }
+
 
 export function sendAddSampleTask(queue_id, sample_id, parameters, runNow) {
   return function (dispatch) {
@@ -170,6 +184,7 @@ export function sendAddSampleTask(queue_id, sample_id, parameters, runNow) {
   };
 }
 
+
 export function sendAddSampleAndTask(sample_id, parameters) {
   return function (dispatch) {
     dispatch(sendAddSample(sample_id)).then(
@@ -178,6 +193,7 @@ export function sendAddSampleAndTask(sample_id, parameters) {
             });
   };
 }
+
 
 export function sendChangeSampleTask(task_queue_id, sample_queue_id, sample_id, parameters, runNow) {
   return function (dispatch) {
@@ -225,33 +241,42 @@ export function sendDeleteSampleTask(parent_id, queue_id, sample_id) {
   };
 }
 
-export function doReorderSample(sampleOrder, key, newPos){
+
+export function doReorderSample(sampleOrder, key, targetPos){
+  console.log(`REORDER ${key}->${targetPos}`);
   let newSampleOrder = new Map(sampleOrder);
-  let tempPos = sampleOrder.get(key);
+  let sourcePos = sampleOrder.get(key);
   let tempKey;
 
   for (let [key, pos] of sampleOrder.entries()) {
-    if (pos === newPos) {
+    if (pos === targetPos) {
       tempKey = key;
       break;
     }
   }
 
-//  newSampleOrder.set(tempKey, tempPos);
-
   // Shift samples between the old and new position one step
   for (let [key, pos] of sampleOrder.entries()) {
-    if((tempPos <= pos) && (pos < newPos)){
-      newSampleOrder.set(key, pos + 1);
+    if (sourcePos < targetPos) {
+      if ((sourcePos < pos) && (pos <= targetPos)) {
+        newSampleOrder.set(key, pos - 1);
+      }
+    } else if (sourcePos > targetPos) {
+      if ((sourcePos > pos) && (pos >= targetPos)) {
+        newSampleOrder.set(key, pos + 1);
+      }
     }
-    else if((tempPos < pos) && (pos <= newPos)) { 
-      newSampleOrder.set(key, pos - 1);
-    }    
   }
 
-  newSampleOrder.set(key, newPos);
+  newSampleOrder.set(key, targetPos);
 
   return { type: 'REORDER_SAMPLE',
            sampleOrder: newSampleOrder
          };
+}
+
+
+export function toggleMoveable(key) {
+  return { type: 'TOGGLE_MOVEABLE_SAMPLE',
+           key: key };
 }
