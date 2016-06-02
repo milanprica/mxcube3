@@ -3,12 +3,13 @@ import { addLogRecord } from './actions/logger';
 import { updatePointsPosition, saveMotorPositions, setCurrentPhase } from './actions/sampleview';
 import { beamlinePropertyValueAction } from './actions/beamline';
 import { doAddTaskResult } from './actions/samples_grid';
+import { setStatus } from './actions/queue';
 
 
 export default class ServerIO {
 
   constructor(dispatch) {
-      this.dispatch = dispatch;
+    this.dispatch = dispatch;
   }
 
   listen() {
@@ -17,7 +18,7 @@ export default class ServerIO {
     this.loggingSocket = io.connect(`http://${document.domain}:${location.port}/logging`);
 
     this.loggingSocket.on('log_record', (record) => {
-        this.dispatch(addLogRecord(record));
+      this.dispatch(addLogRecord(record));
     });
 
     this.hwrSocket.on('Motors', (record) => {
@@ -27,24 +28,24 @@ export default class ServerIO {
         case 'minidiffPhaseChanged':
           this.dispatch(setCurrentPhase(record.Data));
           break;
-        case 'n':
-          console.log('sada');
-          break;
-      }  
+        default:
+      }
     });
-    
+
     this.hwrSocket.on('beamline_value_change', (data) => {
-        this.dispatch(beamlinePropertyValueAction(data));
+      this.dispatch(beamlinePropertyValueAction(data));
     });
-    
+
+    // energy.on('value_change', (data) => {
+    //   this.dispatch(beamlinePropertyValueAction(data));
+    // });
+
     this.hwrSocket.on('Task', (record) => {
-        this.dispatch(doAddTaskResult(record.CentredPositions));
+      this.dispatch(doAddTaskResult(record.Sample, record.QueueId, record.State));
     });
 
     this.hwrSocket.on('Queue', (record) => {
       this.dispatch(setStatus(record.Signal));
     });
-
-  }				
+  }
 }
-

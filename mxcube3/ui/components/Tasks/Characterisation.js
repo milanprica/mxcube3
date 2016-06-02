@@ -22,6 +22,25 @@ class Characterisation extends React.Component {
       point : this.props.pointId
     };
 
+    const stringFields = [
+        'centringMethod', 
+        'detector_mode', 
+        'account_rad_damage' , 
+        'opt_sad', 
+        'space_group', 
+        'strategy_complexity', 
+        'prefix', 
+        'path',
+        'Type',
+        'point' 
+    ];
+    
+    for (var key in parameters) {
+        if (parameters.hasOwnProperty(key) && stringFields.indexOf(key) === -1 && parameters[key]) {
+            parameters[key] = Number(parameters[key]);
+        }
+    }
+
     if (this.props.sampleIds.constructor == Array) {
 
       this.props.sampleIds.map((sampleId) => {
@@ -29,7 +48,7 @@ class Characterisation extends React.Component {
         let queueId = this.props.lookup[sampleId];
 
         if (queueId) {
-          this.props.addTask(queueId, sampleId, parameters);
+          this.props.addTask(queueId, sampleId, parameters, runNow);
         } else {
                     // the sample is not in queue yet
           this.props.addSampleAndTask(sampleId, parameters);
@@ -37,8 +56,8 @@ class Characterisation extends React.Component {
       });
 
     } else {
-      let sample_queue_id = this.props.lookup[this.props.sampleIds];
-      this.props.changeTask(this.props.taskData.queue_id, sample_queue_id, this.props.sampleIds, parameters, runNow);
+      let sample_queueID = this.props.lookup[this.props.sampleIds];
+      this.props.changeTask(this.props.taskData.queueID, sample_queueID, this.props.sampleIds, parameters, runNow);
     }
 
     this.props.hide();
@@ -55,7 +74,7 @@ class Characterisation extends React.Component {
 
   render() {
 
-    const {fields: {num_images, exp_time, resolution, osc_start , energy, osc_range, transmission, centringMethod, detector_mode, kappa, kappa_phi, account_rad_damage, opt_sad, space_group, min_crystal_vdim, max_crystal_vdim, min_crystal_vphi, max_crystal_vphi, strategy_complexity, prefix, run_number, dir, beam_size }} = this.props;
+    const {fields: {num_images, exp_time, resolution, osc_start , energy, osc_range, transmission, centringMethod, detector_mode, kappa, kappa_phi, account_rad_damage, opt_sad, space_group, min_crystal_vdim, max_crystal_vdim, min_crystal_vphi, max_crystal_vphi, strategy_complexity, prefix, run_number, path, beam_size }} = this.props;
 
     return (
         <Modal show={this.props.show} onHide={this.props.hide}>
@@ -73,14 +92,14 @@ class Characterisation extends React.Component {
 
                      <div className="form-group">
 
-                        <label className="col-sm-12 control-label">Path: /home/20160502/RAWDATA/{dir.value} </label>
+                        <label className="col-sm-12 control-label">Path: /home/20160502/RAWDATA/{path.value} </label>
                     </div>
 
                      <div className="form-group">
 
-                        <label className="col-sm-2 control-label">Subdirectory</label>
+                        <label className="col-sm-2 control-label">Subpathectory</label>
                         <div className="col-sm-4">
-                            <input type="text" className="form-control" {...dir} />
+                            <input type="text" className="form-control" {...path} />
                         </div>
 
                     </div>
@@ -297,7 +316,7 @@ class Characterisation extends React.Component {
             </label>
           </div>
               <button type="button" className={this.props.pointId !== -1 ? 'btn btn-success' : 'hidden'} onClick={this.runNow}>Run Now</button>
-              <button type="button" className="btn btn-primary" onClick={this.addToQueue}>{this.props.taskData.queue_id ? 'Change' : 'Add to Queue'}</button>
+              <button type="button" className="btn btn-primary" onClick={this.addToQueue}>{this.props.taskData.queueID ? 'Change' : 'Add to Queue'}</button>
           </Modal.Footer>
         </Modal>
         );
@@ -306,10 +325,10 @@ class Characterisation extends React.Component {
 
 Characterisation = reduxForm({ // <----- THIS IS THE IMPORTANT PART!
   form: 'characterisation',                           // a unique name for this form
-  fields: ['num_images', 'exp_time', 'resolution', 'osc_start' , 'energy', 'osc_range', 'transmission', 'centringMethod', 'detector_mode', 'kappa', 'kappa_phi', 'account_rad_damage' , 'opt_sad', 'space_group', 'min_crystal_vdim', 'max_crystal_vdim', 'min_crystal_vphi', 'max_crystal_vphi', 'strategy_complexity', 'prefix', 'run_number', 'dir', 'beam_size' ] // all the fields in your form
+  fields: ['num_images', 'exp_time', 'resolution', 'osc_start' , 'energy', 'osc_range', 'transmission', 'centringMethod', 'detector_mode', 'kappa', 'kappa_phi', 'account_rad_damage' , 'opt_sad', 'space_group', 'min_crystal_vdim', 'max_crystal_vdim', 'min_crystal_vphi', 'max_crystal_vphi', 'strategy_complexity', 'prefix', 'run_number', 'path', 'beam_size' ] // all the fields in your form
 },
 state => ({ // mapStateToProps
-  initialValues: { ...state.taskForm.taskData.parameters, beam_size: state.sampleview.currentAperture,  prefix: 'insulin', run_number: 1, dir: 'username'  } // will pull state into form's initialValues
+  initialValues: { ...state.taskForm.taskData.parameters, beam_size: state.sampleview.currentAperture,  prefix: 'insulin', run_number: 1, path: 'username'  } // will pull state into form's initialValues
 }))(Characterisation);
 
 export default Characterisation;
