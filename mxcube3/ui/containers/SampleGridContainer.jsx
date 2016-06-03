@@ -4,10 +4,10 @@ import { StickyContainer, Sticky } from 'react-sticky';
 
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { Input, Button, Glyphicon, ButtonToolbar, SplitButton, MenuItem } from 'react-bootstrap';
-import { doGetSamplesList, doUpdateSamples, doToggleSelected, doSelectAll, doFilter, 
-         doSyncSamples, sendManualMount, doUnselectAll, sendDeleteSampleTask, 
-         doReorderSample, toggleMoveable } from '../actions/samples_grid';
+import { Input, Button, Glyphicon, ButtonToolbar, SplitButton, MenuItem,
+         PanelGroup, Panel } from 'react-bootstrap';
+import { doGetSamplesList, doUpdateSamples, doToggleSelected, doSelectAll, doFilter, doSyncSamples,
+         sendManualMount, doUnselectAll, sendDeleteSampleTask } from '../actions/SamplesGrid';
 
 import { sendAddSample } from '../actions/queue';
 import { showTaskForm } from '../actions/taskForm';
