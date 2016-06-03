@@ -155,32 +155,33 @@ export default class SampleGridItem extends React.Component {
             this.props.tags.map((tag, i) => {
               const style = { display: 'inline-block', margin: '3px', cursor: 'pointer' };
               let content;
+              
+              if ((typeof tag) === 'string') {
+                content = <span key={i} className="label label-primary" style={style}>{tag}</span>;
+              } else {
+                // assuming a Task
+                let showForm = (e) => {
+                  e.stopPropagation();
+                  return this.props.showTaskParametersForm(tag.type, this.props.sampleID, tag);
+                };
 
-            if ((typeof tag) === 'string') {
-              content = <span key={i} className="label label-primary" style={style}>{tag}</span>;
-            } else {
-              // assuming a Task
-              let showForm = (e) => {
-                e.stopPropagation();
-                return this.props.showTaskParametersForm(tag.type, this.props.sampleID, tag);
-              };
+                let deleteTask = (e) => {
+                  e.stopPropagation();
+                  return this.props.deleteTask(tag.parent_id, tag.queueID, tag.sampleID);
+                };
 
-              let deleteTask = (e) => {
-                e.stopPropagation();
-                return this.props.deleteTask(tag.parent_id, tag.queueID, tag.sampleID);
-              };
-
-              content = (
-                <span key={i} className="btn-primary label" style={style} onClick={showForm}>
-                  {`${tag.label} `}
-                  <i className="fa fa-times" onClick={deleteTask} />
-                </span>
-              );
+                content = (
+                  <span key={i} className="btn-primary label" style={style} onClick={showForm}>
+                    {`${tag.label} `}
+                    <i className="fa fa-times" onClick={deleteTask} />
+                  </span>
+                );
+              }
 
               return content;
-            }
-          })
-        }
+            })
+          }
+        </div>
       </div>
     );
   }
