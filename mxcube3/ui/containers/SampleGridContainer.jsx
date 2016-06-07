@@ -4,10 +4,11 @@ import { StickyContainer, Sticky } from 'react-sticky';
 
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { Input, Button, Glyphicon, ButtonToolbar, SplitButton, MenuItem } from 'react-bootstrap';
-import { doGetSamplesList, doUpdateSamples, doToggleSelected, doSelectAll, doFilter, 
-         doSyncSamples, sendManualMount, doUnselectAll, sendDeleteSampleTask, 
-         doReorderSample, toggleMoveable } from '../actions/samples_grid';
+import { Input, Button, Glyphicon, ButtonToolbar, SplitButton, MenuItem,
+         PanelGroup, Panel, ButtonGroup } from 'react-bootstrap';
+import { doGetSamplesList, doUpdateSamples, doToggleSelected, doSelectAll, doFilter, doSyncSamples,
+         sendManualMount, doUnselectAll, sendDeleteSampleTask, toggleMoveable, doReorderSample,
+         toggleToBeCollected, doSelectRange, doPickSelected } from '../actions/SamplesGrid';
 
 import { sendAddSample } from '../actions/queue';
 import { showTaskForm } from '../actions/taskForm';
@@ -66,26 +67,25 @@ class SampleGridContainer extends React.Component {
 
   
   calcGridWidth() {
-    // Width black magic
     // We know that the side menu is fixed width 65px and that the padding from
     // bootstrap is 15px so content starts at 80px;
 
     // Get the viewportWidth
     const viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
 
-    // the full content width for this media (not forgeting the padding to the right 15px)
+    // The full content width for this media (not forgeting the padding to the right 15px)
     const fullContentWidth = viewportWidth - 80 - 15
 
-    // Each sample item is 190px, calculate maximum number of items for each row
-    const numCols = Math.floor(fullContentWidth / 190);
+    // Each sample item is 190px wide, calculate maximum number of items for each row
+    const numCols = Math.floor(fullContentWidth / SAMPLE_ITEM_WIDTH);
 
     // Caculating the actual grid size, space between sample items is 4px;
-    const actualGridWidth = numCols * (SAMPLE_ITEM_WIDTH + 2 + SAMPLE_ITEM_SPACE);
+    const actualGridWidth = numCols * (SAMPLE_ITEM_WIDTH + 2 + SAMPLE_ITEM_SPACE) + 10;
 
 
     return actualGridWidth;
-  } 
-
+  }
+  
 
   render() {   
     const gridWidth = this.calcGridWidth();
@@ -135,23 +135,28 @@ class SampleGridContainer extends React.Component {
                    buttonAfter={innerSearchIcon}
                    onChange={this.filterSampleGrid}
                  />
-               <ButtonToolbar style={{'margin-left': '10px'}} className="form-group">
-                 <Button
-                   className="btn"
-                   onClick={this.props.unselectAll}
-                   disabled={this.props.manualMount}
-                 >
-                   Unselect all
-                 </Button>
-                 <Button
-                   className="btn"
-                   onClick={this.props.selectAll}
-                   disabled={this.props.manualMount}
-                 >
-                   Select all
-                 </Button>
-               </ButtonToolbar>
-              </div>      
+                 <span style={{'margin-left': '10px'}}>Pick: </span>
+                 <ButtonGroup className="form-group">
+                   <Button
+                     onClick={this.props.selectAll}
+                     disabled={this.props.manualMount}
+                   >
+                     All
+                   </Button>
+                   <Button
+                     onClick={this.props.pickSelected}
+                     disabled={this.props.manualMount}
+                   >
+                     Selected
+                   </Button>
+                   <Button
+                     onClick={this.props.unselectAll}
+                     disabled={this.props.manualMount}
+                   >
+                     None
+                   </Button>
+                 </ButtonGroup>
+               </div>      
              </div>
              <div className="col-xs-2 pull-right">
                <SampleTaskButtons 
@@ -181,6 +186,10 @@ class SampleGridContainer extends React.Component {
                toggleMoveable={this.props.toggleMoveable}
                moving={this.props.moving}
                gridWidth={gridWidth}
+               samplesToBeCollected={this.props.samplesToBeCollected}
+               toggleToBeCollected={this.props.toggleToBeCollected}
+               selectRange={this.props.selectRange}
+               pickSelected={this.props.pickSelected}
              />
            </div>
          </div>
@@ -198,7 +207,8 @@ function mapStateToProps(state) {
     defaultParameters: state.taskForm.defaultParameters,
     manualMount: state.samples_grid.manualMount.set,
     filterText: state.samples_grid.filter_text,
-    sampleOrder: state.samples_grid.sampleOrder
+    sampleOrder: state.samples_grid.sampleOrder,
+    samplesToBeCollected: state.samples_grid.samplesToBeCollected
   };
 }
 
@@ -218,7 +228,10 @@ function mapDispatchToProps(dispatch) {
     deleteTask: (parentId, queueId, sampleId) => {
       dispatch(sendDeleteSampleTask(parentId, queueId, sampleId));
     },
-    toggleMoveable: (key) => dispatch(toggleMoveable(key))
+    toggleMoveable: (key) => dispatch(toggleMoveable(key)),
+    toggleToBeCollected: (key) => dispatch(toggleToBeCollected(key)),
+    selectRange: (keys) => dispatch(doSelectRange(keys)),
+    pickSelected: () => dispatch(doPickSelected())
   };
 }
 

@@ -63,12 +63,17 @@ export function doToggleSelected(index) {
 
 export function doSelectAll() {
   let selected = true;
-  return { type: 'SELECT_ALL', selected };
+  return { type: 'FLAG_ALL_TO_BE_COLLECTED', selected };
 }
 
 export function doUnselectAll() {
   let selected = false;
-  return { type: 'UNSELECT_ALL', selected };
+  return { type: 'UNFLAG_ALL_TO_BE_COLLECTED', selected };
+}
+
+
+export function doSelectRange(keys) {
+  return {type: 'SELECT_RANGE', keys};
 }
 
 
@@ -268,13 +273,20 @@ export function doReorderSample(sampleOrder, key, targetPos){
 
   newSampleOrder.set(key, targetPos);
 
-  return { type: 'REORDER_SAMPLE',
-           sampleOrder: newSampleOrder
-         };
+  return { type: 'REORDER_SAMPLE', sampleOrder: newSampleOrder };
 }
 
 
 export function toggleMoveable(key) {
-  return { type: 'TOGGLE_MOVEABLE_SAMPLE',
-           key: key };
+  return { type: 'TOGGLE_MOVEABLE_SAMPLE', key: key };
+}
+
+
+export function toggleToBeCollected(key) {
+  return { type: 'TOGGLE_TO_BE_COLLECTED', key: key };
+}
+
+
+export function doPickSelected() {
+  return { type: 'PICK_SELECTED_SAMPLES'};
 }

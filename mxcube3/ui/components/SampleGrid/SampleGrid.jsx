@@ -1,34 +1,36 @@
-import ReactDOM from 'react-dom';
 import React from 'react';
 import Isotope from 'isotope-layout';
 
-import { SampleGridItem, SAMPLE_ITEM_WIDTH, SAMPLE_ITEM_HEIGHT, SAMPLE_ITEM_SPACE } from './SampleGridItem';
+import { SampleGridItem, SAMPLE_ITEM_WIDTH, SAMPLE_ITEM_HEIGHT,
+         SAMPLE_ITEM_SPACE } from './SampleGridItem';
 import './SampleGrid.css';
 
 export default class SampleGrid extends React.Component {
 
   constructor(props) {
     super(props);
+    this._selectStartSeqId = -1;
     this.filter = this.filter.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
     this.moveItem = this.moveItem.bind(this);
     this.canMove = this.canMove.bind(this);
+    this.dragStartSelection = this.dragStartSelection.bind(this);
+    this.dragSelectItem = this.dragSelectItem.bind(this);
   }
 
 
   componentDidMount() {
-    document.addEventListener("keydown", this.onKeyDown, false);
+    document.addEventListener('keydown', this.onKeyDown, false);
 
     if (! this.isotope) {
-      const container = ReactDOM.findDOMNode(this);
       const options = { itemSelector: '.samples-grid-item',
                         resize: false,
                         initLayout: false,
                         layoutMode: 'fitRows',
                         getSortData: {
                           name: '.protein-acronym',
-                          seqId: function(itemElem) {
-                            var seqId = itemElem.getElementsByClassName('seq-id')[0].innerHTML;
+                          seqId: (itemElem) => {
+                            const seqId = itemElem.getElementsByClassName('seq-id')[0].innerHTML;
                             return parseFloat(seqId);
                           }
                         },
@@ -45,20 +47,42 @@ export default class SampleGrid extends React.Component {
   }
 
 
-  gridDimension() {
-    let colArray = [];
-    let _numCols = {}
+  componentDidUpdate() {
+    if (this.isotope) {
+      this.isotope.reloadItems();
+      this.isotope.layout();
+      this.isotope.arrange({ sortBy: 'seqId' });
+    }
+  }
 
+
+  onKeyDown(event) {
+    if (event.key === 'ArrowRight') {
+      this.moveItem('RIGHT');
+    } else if (event.key === 'ArrowLeft') {
+      this.moveItem('LEFT');
+    } else if (event.key === 'ArrowDown') {
+      this.moveItem('DOWN');
+    } else if (event.key === 'ArrowUp') {
+      this.moveItem('UP');
+    } else if (event.key === 'p') {
+      this.props.pickSelected();
+    }
+  }
+
+
+  gridDimension() {
+    const colArray = [];
     const numItems = this.props.sampleOrder.size;
     const numFullCols = Math.floor(this.props.gridWidth / 190);
     const numFullRows = Math.floor(numItems / numFullCols);
     const itemsOnLastRow = numItems - (numFullRows * numFullCols);
 
-    for(var i = 0; i < numFullRows; i++){
+    for (let i = 0; i < numFullRows; i++) {
       colArray[i] = numFullCols;
     }
 
-    if(itemsOnLastRow > 0) {
+    if (itemsOnLastRow > 0) {
       colArray[numFullRows] = itemsOnLastRow;
     }
 
@@ -67,20 +91,20 @@ export default class SampleGrid extends React.Component {
 
 
   itemGridPosition(key) {
-    let gridDim = this.gridDimension();
-    let numCols = gridDim[0];
-    let pos = this.props.sampleOrder.get(key);
+    const gridDim = this.gridDimension();
+    const numCols = gridDim[0];
+    const pos = this.props.sampleOrder.get(key);
 
-    let rowPos = Math.floor(pos/numCols);
-    let colPos = pos - (rowPos * numCols);
+    const rowPos = Math.floor(pos / numCols);
+    const colPos = pos - (rowPos * numCols);
 
-    return {row:rowPos, col:colPos, gridDimension: gridDim};
+    return { row: rowPos, col: colPos, gridDimension: gridDim };
   }
 
 
   canMove(key) {
-    let [up, down, left, right] = [true, true, true, true]
-    let itemPos = this.itemGridPosition(key);
+    let [up, down, left, right] = [true, true, true, true];
+    const itemPos = this.itemGridPosition(key);
 
     if (itemPos.col === 0) {
       left = false;
@@ -98,7 +122,7 @@ export default class SampleGrid extends React.Component {
       down = false;
     }
 
-    if (itemPos.col === (itemPos.gridDimension[itemPos.row] - 1 )) {
+    if (itemPos.col === (itemPos.gridDimension[itemPos.row] - 1)) {
       right = false;
     }
 
@@ -106,17 +130,53 @@ export default class SampleGrid extends React.Component {
   }
 
 
-  moveItem(dir){
-    let selectedItemKey, selected;
+  keysFromSeqId(start, end) {
+    let [_start, _end] = [start, end];
+    const keys = [];
+
+    if (start > end) {
+      [_start, _end] = [end, start];
+    }
+
+    for (const [key, value] of this.props.sampleOrder.entries()) {
+      if (value >= _start && value <= _end) {
+        keys.push(key);
+      }
+    }
+
+    return keys;
+  }
+
+
+  dragStartSelection(key, seqId) {
+    this._selectStartSeqId = seqId;
+    this.props.selectRange(this.keysFromSeqId(this._selectStartSeqId, seqId));
+  }
+
+
+  dragSelectItem(key, seqId) {
+    this.props.selectRange(this.keysFromSeqId(this._selectStartSeqId, seqId));
+  }
+
+
+  selectedItem() {
+    let [selectedItemKey, selected] = ['', ''];
 
     for (const key in this.props.selected) {
       selected = this.props.selected[key];
 
-      if (selected){
+      if (selected) {
         selectedItemKey = key;
         break;
       }
     }
+
+    return selectedItemKey;
+  }
+
+
+  moveItem(dir) {
+    const selectedItemKey = this.selectedItem();
 
     if (!selectedItemKey) {
       return;
@@ -126,25 +186,19 @@ export default class SampleGrid extends React.Component {
       return;
     }
 
-    let numCols = this.gridDimension()[0];
+    const numCols = this.gridDimension()[0];
     let newPos = this.props.sampleOrder.get(selectedItemKey);
-    let [canMoveUp, canMoveDown, canMoveLeft, canMoveRight] = this.canMove(selectedItemKey);
+    const [canMoveUp, canMoveDown, canMoveLeft, canMoveRight] = this.canMove(selectedItemKey);
 
-    if (dir === 'RIGHT' && canMoveRight){ 
+    if (dir === 'RIGHT' && canMoveRight) {
       newPos = newPos + 1;
-    }
-    else if(dir === 'LEFT' && canMoveLeft){
+    } else if (dir === 'LEFT' && canMoveLeft) {
       newPos = newPos - 1;
-    }
-    else if(dir === 'DOWN' && canMoveDown){
+    } else if (dir === 'DOWN' && canMoveDown) {
       newPos = newPos + numCols;
-      //this.refs.container.scrollTop += 100; 
-    }
-    else if(dir === 'UP' && canMoveUp){
+    } else if (dir === 'UP' && canMoveUp) {
       newPos = newPos - numCols;
-      //this.refs.container.scrollTop -= 100; 
-    }
-    else{
+    } else {
       return;
     }
 
@@ -152,32 +206,18 @@ export default class SampleGrid extends React.Component {
   }
 
 
-  onKeyDown(event){
-    if (event.key === 'ArrowRight'){ 
-      this.moveItem('RIGHT');
+  toggleToBeCollected(itemKey) {
+    let selectedItemKey = itemKey;
+
+    if (!selectedItemKey) {
+      selectedItemKey = this.selectedItem();
     }
-    else if(event.key === 'ArrowLeft'){
-      this.moveItem('LEFT');
-    }
-    else if(event.key === 'ArrowDown'){
-      this.moveItem('DOWN');
-    }
-    else if(event.key === 'ArrowUp'){
-      this.moveItem('UP');
-    }
-    else{
+
+    if (!selectedItemKey) {
       return;
     }
-    
-    this.props.reorderSample(this.props.sampleOrder, selectedItemKey, newPos);
-  }
 
-  componentDidUpdate(prevProps) {
-    if (this.isotope) {
-      this.isotope.reloadItems();
-      this.isotope.layout();
-      this.isotope.arrange({sortBy: 'seqId'});
-    }
+    this.props.toggleToBeCollected(selectedItemKey);
   }
 
 
@@ -205,16 +245,20 @@ export default class SampleGrid extends React.Component {
 
         sampleGrid.push(
           <SampleGridItem
-            ref={i} seqId={this.props.sampleOrder.get(key)} itemKey={key} selectKey={key} 
-            sample_id={sample.id} acronym={acronym} name={name} dm={sample.code} loadable={false} 
+            ref={i} seqId={this.props.sampleOrder.get(key)} itemKey={key}
+            sample_id={sample.id} acronym={acronym} name={name} dm={sample.code} loadable={false}
             location={sample.location} tags={tags} selected={this.props.selected[key]}
             deleteTask={this.props.deleteTask}
             showTaskParametersForm={this.props.showTaskParametersForm}
             onClick={this.props.toggleSelected}
             toggleMoveable={this.props.toggleMoveable}
+            toBeCollected={this.props.samplesToBeCollected[key]}
             moving={this.props.moving[key]}
             moveItem={this.moveItem}
             canMove={this.canMove}
+            toggleToBeCollected={this.props.toggleToBeCollected}
+            dragStartSelection={this.dragStartSelection}
+            dragSelectItem={this.dragSelectItem}
           />
         );
 
@@ -223,7 +267,7 @@ export default class SampleGrid extends React.Component {
     });
 
     return (
-      <div ref="container" className="samples-grid" style={{width:this.props.gridWidth, 'margin-left':'auto', 'margin-right':'auto'}}>
+      <div ref="container" className="samples-grid" style={{ width: this.props.gridWidth }}>
         {sampleGrid}
       </div>
     );
@@ -233,5 +277,5 @@ export default class SampleGrid extends React.Component {
 
 SampleGrid.propTypes = {
   filter_text: React.PropTypes.string,
-  toggleSelected: React.PropTypes.func.isRequired
+  toggleActiveItem: React.PropTypes.func.isRequired
 };
